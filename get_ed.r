@@ -1,12 +1,12 @@
 ## get all ed api
 
 get_ed <- function(username, password, start_date, end_date, site_no, user_id, ...) {
-  
   require(httr, quietly = T)
   require(jsonlite, quietly = T)
   require(glue, quietly = T)
   require(purrr, quietly = T)
-   
+  
+  
   url <- "https://essence.syndromicsurveillance.org/nssp_essence/api/dataDetails?endDate=8Sep2018&percentParam=noPercent&geographySystem=hospital&datasource=va_hosp&detector=nodetectordetector&startDate=8Sep2018&timeResolution=daily&hasBeenE=1&medicalGroupingSystem=essencesyndromes&userId=000&site=000&hospFacilityType=emergency%20care&aqtTarget=DataDetails"
   start_date = format(as.Date(start_date) , "%d%b%Y")
   end_date = format(as.Date(end_date) , "%d%b%Y")
@@ -26,8 +26,12 @@ get_ed <- function(username, password, start_date, end_date, site_no, user_id, .
     else { 
       field <- paste(paste0("&field=",list(...)), collapse="")   
     }
-   gsub("&detector", paste0(field, "&detector"), url)
- }
+    
+    gsub("&detector", paste0(field, "&detector"), url)
+    
+    
+  }
+  
   url <- f_field(url = url, ...)
   
   ##
@@ -44,4 +48,3 @@ get_ed <- function(username, password, start_date, end_date, site_no, user_id, .
  flatten_df(parsed)
   
 }
-
