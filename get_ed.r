@@ -1,20 +1,18 @@
 ## get all ed api
 
-get_ed <- function(username, password, start_date, end_date, site_no, user_id, ...) {
-  
+get_ed <- function(username, password, 
+                       site_no, user_id, 
+                       start_date, end_date, ...) {
   require(httr, quietly = T)
-  require(jsonlite, quietly = T)
   require(glue, quietly = T)
   require(purrr, quietly = T)
-   
-  url <- "https://essence.syndromicsurveillance.org/nssp_essence/api/dataDetails?endDate=8Sep2018&percentParam=noPercent&geographySystem=hospital&datasource=va_hosp&detector=nodetectordetector&startDate=8Sep2018&timeResolution=daily&hasBeenE=1&medicalGroupingSystem=essencesyndromes&userId=000&site=000&hospFacilityType=emergency%20care&aqtTarget=DataDetails"
+  
   start_date = format(as.Date(start_date) , "%d%b%Y")
   end_date = format(as.Date(end_date) , "%d%b%Y")
+  site_no = as.character(site_no)
   
-  url <- gsub("(endDate=)\\w+", glue("\\1{end_date}"), url)
-  url <- gsub("(startDate=)\\w+",glue("\\1{start_date}"), url)
-  url <- gsub("(&site=)\\d+", glue("\\1{site_no}"), url)
-  url <- gsub("(&userId=)\\d+", glue("\\1{user_id}"), url)
+  url <- glue::glue("https://essence.syndromicsurveillance.org/nssp_essence/api/dataDetails/csv?endDate={end_date}&percentParam=noPercent&geographySystem=hospital&datasource=va_hosp&detector=nodetectordetector&startDate={start_date}&ageNCHS=unknown&ageNCHS=00-10&ageNCHS=11-14&ageNCHS=15-24&ageNCHS=25-34&ageNCHS=35-44&ageNCHS=45-54&ageNCHS=55-64&ageNCHS=65-74&ageNCHS=75-84&ageNCHS=85-1000&timeResolution=daily&hasBeenE=1&medicalGroupingSystem=essencesyndromes&userId={user_id}&site={site_no}&hospFacilityType=emergency%20care&aqtTarget=DataDetails&refValues=true")
+  
   
   ## select fields
   
@@ -26,22 +24,10 @@ get_ed <- function(username, password, start_date, end_date, site_no, user_id, .
     else { 
       field <- paste(paste0("&field=",list(...)), collapse="")   
     }
-   gsub("&detector", paste0(field, "&detector"), url)
- }
-  url <- f_field(url = url, ...)
-  
-  ##
-  
-  set_config(config(ssl_verifypeer = 0L))
-  resp <- httr::GET(url = url, authenticate(username , password ))
-  
-  if (http_type(resp) != "application/json") {
-    stop("API did not return json", call. = FALSE)
+    paste0(url, field)
   }
   
-  parsed <- jsonlite::fromJSON(content(resp, "text"), simplifyVector = FALSE)
-  
- flatten_df(parsed)
-  
+  url <- f_field(url = url, ...)
+  api_resp <- GET(url, authenticate(user = username, password = password))
+  content(api_resp, type = "text/csv")
 }
-
