@@ -1,32 +1,37 @@
 # get heroin api
 
-get_ed_heroin <- function(username, password, start_date, end_date, version = 4, site_no, user_id) {
+get_ed_heroin <- function(username, password, 
+                        site_no, user_id, version = 1, 
+                        start_date, end_date, ...) {
   require(httr, quietly = T)
-  require(jsonlite, quietly = T)
   require(glue, quietly = T)
   require(purrr, quietly = T)
   
-  
-  url <- "https://essence.syndromicsurveillance.org/nssp_essence/api/dataDetails?endDate=4Jul2018&ccddCategory=cdc%20heroin%20overdose%20v4&percentParam=noPercent&geographySystem=hospital&datasource=va_hosp&detector=nodetectordetector&startDate=4Jul2018&timeResolution=daily&hasBeenE=1&medicalGroupingSystem=essencesyndromes&userId=000&site=000&hospFacilityType=emergency%20care&aqtTarget=DataDetails"
-  
   start_date = format(as.Date(start_date) , "%d%b%Y")
   end_date = format(as.Date(end_date) , "%d%b%Y")
+  version = as.character(version)
   
-  url <- gsub("(endDate=)\\w+", glue("\\1{end_date}"), url)
-  url <- gsub("(startDate=)\\w+",glue("\\1{start_date}"), url)
+  url <- glue::glue("https://essence.syndromicsurveillance.org/nssp_essence/api/dataDetails/csv?endDate={end_date}&ccddCategory=cdc%20all%20drug%20v{version}&percentParam=noPercent&geographySystem=hospital&datasource=va_hosp&detector=nodetectordetector&startDate={start_date}&ageNCHS=unknown&ageNCHS=00-10&ageNCHS=11-14&ageNCHS=15-24&ageNCHS=25-34&ageNCHS=35-44&ageNCHS=45-54&ageNCHS=55-64&ageNCHS=65-74&ageNCHS=75-84&ageNCHS=85-1000&timeResolution=daily&hasBeenE=1&medicalGroupingSystem=essencesyndromes&userId={user_id}&site={site_no}&hospFacilityType=emergency%20care&aqtTarget=DataDetails&refValues=true")
+
   
-  url <- gsub("(%20v)\\d+", glue("\\1{version}"), url)
-  url <- gsub("(&site=)\\d+", glue("\\1{site_no}"), url)
-  url <- gsub("(&userId=)\\d+", glue("\\1{user_id}"), url)
+  ## select fields
   
-  set_config(config(ssl_verifypeer = 0L))
-  resp <- httr::GET(url = url, authenticate(username , password ))
-  
-  if (http_type(resp) != "application/json") {
-    stop("API did not return json", call. = FALSE)
+  f_field <- function(url, ...){
+    
+    if(!length(list(...))){
+      field <- NULL
+    } 
+    else { 
+      field <- paste(paste0("&field=",list(...)), collapse="")   
+    }
+    
+    paste0(url, field)
   }
   
-  parsed <- jsonlite::fromJSON(content(resp, "text"), simplifyVector = FALSE)
+  url <- f_field(url = url, ...)
   
-  flatten_df(parsed)
+  api_resp <- GET(url, authenticate(user = username, password = password))
+  
+  content(api_resp, type = "text/csv")
+  
 }
